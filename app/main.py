@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -12,6 +13,8 @@ from app.config import settings
 from app.models import get_session, init_db
 from app.schemas import ClickDetail, ShortenRequest, ShortenResponse, StatsResponse
 from app.services import create_link, get_link_stats, record_click, resolve_link
+
+_INDEX_HTML = (Path(__file__).parent / "static" / "index.html").read_text()
 
 
 @asynccontextmanager
@@ -29,6 +32,11 @@ app.state.limiter = limiter
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    return _INDEX_HTML
 
 
 @app.post("/shorten", response_model=ShortenResponse)
