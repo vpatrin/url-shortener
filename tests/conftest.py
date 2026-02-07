@@ -1,23 +1,65 @@
-"""Pytest configuration and shared fixtures."""
+"""Pytest configuration and shared fixtures with Testcontainers.
+
+This uses Docker containers for PostgreSQL and Redis, ensuring:
+- Complete isolation between test runs
+- No manual database setup required
+- Production-like environment
+- CI/CD friendly
+"""
+
+import os
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from testcontainers.postgres import PostgresContainer
+from testcontainers.redis import RedisContainer
 
-from app.config import settings
 from app.main import app
 from app.models import Base
 
 
-# Test database URL (you can override with TEST_DATABASE_URL env var)
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/shortener_test"
+@pytest.fixture(scope="session")
+def postgres_container():
+    """
+    Start a PostgreSQL container for the test session.
+    The container is automatically stopped after all tests complete.
+    """
+    with PostgresContainer("postgres:16-alpine") as postgres:
+        # Convert psycopg2 URL to asyncpg
+        db_url = postgres.get_connection_url().replace("psycopg2", "asyncpg")
+        yield db_url
 
 
 @pytest.fixture(scope="session")
-def test_engine():
-    """Create a test database engine."""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+def redis_container():
+    """
+    Start a Redis container for the test session.
+    The container is automatically stopped after all tests complete.
+    """
+    with RedisContainer("redis:7-alpine") as redis:
+        redis_url = f"redis://{redis.get_container_host_ip()}:{redis.get_exposed_port(6379)}/0"
+        yield redis_url
+
+
+@pytest.fixture(scope="session")
+def test_engine(postgres_container):
+    """Create a test database engine using the testcontainer."""
+    engine = create_async_engine(postgres_container, echo=False)
     return engine
+
+
+@pytest.fixture(scope="function", autouse=True)
+def setup_test_environment(postgres_container, redis_container, monkeypatch):
+    """
+    Override settings for each test to use testcontainers.
+    autouse=True means this runs automatically for every test.
+    """
+    monkeypatch.setattr("app.config.settings.DATABASE_URL", postgres_container)
+    monkeypatch.setattr("app.config.settings.REDIS_URL", redis_container)
+    # Override environment variables as well
+    monkeypatch.setenv("DATABASE_URL", postgres_container)
+    monkeypatch.setenv("REDIS_URL", redis_container)
 
 
 @pytest.fixture(scope="function")

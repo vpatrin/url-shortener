@@ -108,6 +108,14 @@ The test suite includes:
 - **Integration tests**: Full API endpoint tests with test database
 - **Coverage reports**: HTML reports generated in `htmlcov/`
 
+**Test Infrastructure** (Testcontainers):
+
+- Tests use **Docker containers** for PostgreSQL and Redis
+- **No manual setup required** - containers start automatically
+- **Complete isolation** - fresh environment for each test run
+- **Production-like** - same PostgreSQL/Redis versions as prod
+- Containers are automatically cleaned up after tests
+
 ### Code Quality
 
 This project follows professional Python standards:
