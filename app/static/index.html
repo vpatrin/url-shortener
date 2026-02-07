@@ -3,88 +3,371 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>URL Shortener</title>
+<title>$ url-shortener</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #0f0f0f; color: #e0e0e0;
-    min-height: 100vh; display: flex; justify-content: center; padding: 3rem 1rem;
-  }
-  .container { max-width: 520px; width: 100%; }
-  h1 { font-size: 1.5rem; margin-bottom: 2rem; color: #fff; }
-  h1 span { color: #888; font-weight: 400; }
 
-  /* Form */
-  .card {
-    background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px;
-    padding: 1.5rem; margin-bottom: 1rem;
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: #0a0a0a;
+    color: #e8e8e8;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 3rem 1rem;
+    line-height: 1.6;
   }
-  label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .container {
+    max-width: 720px;
+    width: 100%;
+  }
+
+  /* Header */
+  .header {
+    border: 1px solid #1a1a1a;
+    border-bottom: 1px solid #ff5722;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #e8e8e8;
+    margin-bottom: 0.5rem;
+  }
+
+  h1::before {
+    content: "$ ";
+    color: #ff5722;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 10px;
+    height: 20px;
+    background: #ff5722;
+    animation: blink 1s infinite;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 400;
+  }
+
+  /* Sections */
+  .section {
+    border: 1px solid #1a1a1a;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.2s;
+  }
+
+  .section:hover {
+    border-color: #ff5722;
+  }
+
+  .section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: #666;
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+
+  /* Form elements */
+  label {
+    display: block;
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+
   input {
-    width: 100%; padding: 0.65rem 0.8rem; background: #0f0f0f; border: 1px solid #333;
-    border-radius: 6px; color: #e0e0e0; font-size: 0.95rem; outline: none;
-    transition: border-color 0.15s;
+    width: 100%;
+    padding: 0.75rem;
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    color: #e8e8e8;
+    font-size: 0.9rem;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+    transition: border-color 0.2s;
   }
-  input:focus { border-color: #555; }
-  input::placeholder { color: #555; }
-  .row { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
-  .row .field { flex: 1; }
-  .row .field-sm { width: 100px; flex: none; }
+
+  input:focus {
+    border-color: #ff5722;
+  }
+
+  input::placeholder {
+    color: #333;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
   button {
-    width: 100%; padding: 0.7rem; background: #fff; color: #000; border: none;
-    border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
-    margin-top: 1rem; transition: opacity 0.15s;
+    width: 100%;
+    padding: 0.75rem;
+    background: #ff5722;
+    color: #0a0a0a;
+    border: 1px solid #ff5722;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
   }
-  button:hover { opacity: 0.85; }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button:hover {
+    background: #0a0a0a;
+    color: #ff5722;
+  }
+
+  button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
 
   /* Result */
-  .result { display: none; }
-  .result.show { display: block; }
-  .short-url {
-    display: block; padding: 0.65rem 0.8rem; background: #0f0f0f; border: 1px solid #2a2a2a;
-    border-radius: 6px; color: #7dd3fc; text-decoration: none; font-size: 0.95rem;
-    word-break: break-all;
+  .result {
+    display: none;
   }
-  .short-url:hover { color: #bae6fd; }
-  .meta { font-size: 0.78rem; color: #666; margin-top: 0.5rem; }
+
+  .result.show {
+    display: block;
+  }
+
+  .short-url {
+    display: block;
+    padding: 0.75rem;
+    background: #0a0a0a;
+    border: 1px solid #ff5722;
+    color: #ff5722;
+    text-decoration: none;
+    font-size: 0.9rem;
+    word-break: break-all;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+    cursor: text;
+    user-select: text;
+  }
+
+  .short-url:hover {
+    background: #ff5722;
+    color: #0a0a0a;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .meta {
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 1rem;
+  }
+
+  .meta::before {
+    content: "> ";
+    color: #ff5722;
+  }
+
   .copy-btn {
-    width: auto; display: inline-block; padding: 0.35rem 0.8rem;
-    font-size: 0.78rem; margin-top: 0.5rem; background: #2a2a2a; color: #ccc;
+    width: auto;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    background: #1a1a1a;
+    color: #e8e8e8;
+    border-color: #1a1a1a;
+  }
+
+  .copy-btn:hover {
+    background: #ff5722;
+    color: #0a0a0a;
+    border-color: #ff5722;
   }
 
   /* Stats */
-  .stats-section { margin-top: 2rem; }
-  .stats-form { display: flex; gap: 0.5rem; }
-  .stats-form input { flex: 1; }
-  .stats-form button { width: auto; margin-top: 0; padding: 0.65rem 1.2rem; }
-  .stats { display: none; margin-top: 1rem; }
-  .stats.show { display: block; }
-  .stat-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #222; font-size: 0.85rem; }
-  .stat-label { color: #888; }
-  table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; font-size: 0.78rem; }
-  th { text-align: left; color: #888; padding: 0.4rem 0.5rem; border-bottom: 1px solid #333; font-weight: 500; }
-  td { padding: 0.4rem 0.5rem; border-bottom: 1px solid #1a1a1a; color: #aaa; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stats-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+  }
 
-  .error { color: #f87171; font-size: 0.82rem; margin-top: 0.5rem; display: none; }
-  .error.show { display: block; }
+  .stats {
+    display: none;
+  }
+
+  .stats.show {
+    display: block;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #1a1a1a;
+    font-size: 0.85rem;
+  }
+
+  .stat-row:last-of-type {
+    border-bottom: none;
+  }
+
+  .stat-label {
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .stat-value {
+    color: #e8e8e8;
+    word-break: break-all;
+  }
+
+  /* Table */
+  .table-wrapper {
+    margin-top: 1.5rem;
+    border: 1px solid #1a1a1a;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+  }
+
+  th {
+    text-align: left;
+    color: #666;
+    padding: 0.75rem;
+    border-bottom: 1px solid #1a1a1a;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: #0a0a0a;
+  }
+
+  td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #0f0f0f;
+    color: #e8e8e8;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: #0f0f0f;
+  }
+
+  /* Error */
+  .error {
+    color: #ff5722;
+    font-size: 0.75rem;
+    margin-top: 0.75rem;
+    display: none;
+    border: 1px solid #ff5722;
+    padding: 0.75rem;
+  }
+
+  .error.show {
+    display: block;
+  }
+
+  .error::before {
+    content: "! ";
+    font-weight: 700;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #333;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #1a1a1a;
+  }
+
+  .footer a {
+    color: #666;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+
+  .footer a:hover {
+    border-bottom-color: #ff5722;
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .stats-form {
+      grid-template-columns: 1fr;
+    }
+
+    table {
+      font-size: 0.65rem;
+    }
+
+    td, th {
+      padding: 0.5rem;
+    }
+  }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>s.victorpatrin.dev <span>/ shorten</span></h1>
+  <!-- Header -->
+  <div class="header">
+    <h1>url-shortener<span class="cursor"></span></h1>
+    <p class="subtitle">Fast URL shortening with click analytics</p>
+  </div>
 
   <!-- Shorten form -->
-  <div class="card">
+  <div class="section">
+    <h2 class="section-title">Shorten URL</h2>
     <label for="url">URL</label>
     <input type="url" id="url" placeholder="https://example.com/very-long-url" required>
-    <div class="row">
-      <div class="field-sm">
+    <div class="form-row">
+      <div>
         <label for="ttl">TTL (hours)</label>
         <input type="number" id="ttl" placeholder="24" min="1">
       </div>
-      <div class="field" style="display:flex;align-items:end;">
+      <div style="display:flex;align-items:end;">
         <button id="shorten-btn" style="margin-top:0;">Shorten</button>
       </div>
     </div>
@@ -92,33 +375,64 @@
   </div>
 
   <!-- Result -->
-  <div class="card result" id="result">
-    <label>Short URL</label>
+  <div class="section result" id="result">
+    <h2 class="section-title">Short URL</h2>
     <a class="short-url" id="short-url" href="#" target="_blank"></a>
     <div class="meta" id="result-meta"></div>
-    <button class="copy-btn" id="copy-btn">Copy</button>
+    <div class="button-group">
+      <button class="copy-btn" id="copy-btn">Copy URL</button>
+      <button class="copy-btn" id="copy-code-btn">Copy Code</button>
+    </div>
   </div>
 
   <!-- Stats -->
-  <div class="stats-section">
-    <div class="card">
-      <label>Stats lookup</label>
-      <div class="stats-form">
-        <input type="text" id="stats-code" placeholder="Code (e.g. aB3xYz)">
-        <button id="stats-btn">Go</button>
-      </div>
-      <div class="error" id="stats-error"></div>
+  <div class="section">
+    <h2 class="section-title">Analytics</h2>
+    <label for="stats-code">Code</label>
+    <div class="stats-form">
+      <input type="text" id="stats-code" placeholder="aB3xYz">
+      <button id="stats-btn">Lookup</button>
     </div>
-    <div class="card stats" id="stats">
-      <div class="stat-row"><span class="stat-label">URL</span><span id="s-url"></span></div>
-      <div class="stat-row"><span class="stat-label">Clicks</span><span id="s-clicks"></span></div>
-      <div class="stat-row"><span class="stat-label">Created</span><span id="s-created"></span></div>
-      <div class="stat-row"><span class="stat-label">Expires</span><span id="s-expires"></span></div>
+    <div class="error" id="stats-error"></div>
+  </div>
+
+  <div class="section stats" id="stats">
+    <h2 class="section-title">Statistics</h2>
+    <div class="stat-row">
+      <span class="stat-label">URL</span>
+      <span class="stat-value" id="s-url"></span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Clicks</span>
+      <span class="stat-value" id="s-clicks"></span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Created</span>
+      <span class="stat-value" id="s-created"></span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Expires</span>
+      <span class="stat-value" id="s-expires"></span>
+    </div>
+
+    <div class="table-wrapper">
       <table id="clicks-table">
-        <thead><tr><th>Time</th><th>IP</th><th>Referer</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>IP</th>
+            <th>Referer</th>
+          </tr>
+        </thead>
         <tbody id="clicks-body"></tbody>
       </table>
     </div>
+  </div>
+
+  <div class="footer">
+    Built with <a href="https://fastapi.tiangolo.com/" target="_blank">FastAPI</a> •
+    <a href="https://github.com/victorpatrin" target="_blank">GitHub</a> •
+    <a href="https://victorpatrin.dev" target="_blank">Victor Patrin</a>
   </div>
 </div>
 
@@ -126,84 +440,177 @@
 const $ = (s) => document.querySelector(s);
 
 function fmtDate(iso) {
-  return new Date(iso).toLocaleString();
+  return new Date(iso).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
 
 function showErr(el, msg) {
-  el.textContent = msg; el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 4000);
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 5000);
 }
 
 // Shorten
 $("#shorten-btn").addEventListener("click", async () => {
   const url = $("#url").value.trim();
-  if (!url) return;
+  if (!url) {
+    showErr($("#shorten-error"), "Please enter a URL");
+    return;
+  }
+
   const btn = $("#shorten-btn");
+  const originalText = btn.textContent;
   btn.disabled = true;
+  btn.textContent = "Processing...";
+
   try {
     const body = { url };
     const ttl = parseInt($("#ttl").value);
     if (ttl > 0) body.ttl_hours = ttl;
+
     const res = await fetch("/shorten", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+
     if (!res.ok) {
       const d = await res.json();
       throw new Error(d.detail || res.statusText);
     }
+
     const data = await res.json();
     $("#short-url").href = data.short_url;
     $("#short-url").textContent = data.short_url;
     $("#result-meta").textContent = "Expires " + fmtDate(data.expires_at);
     $("#result").classList.add("show");
+
+    // Scroll to result
+    $("#result").scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (e) {
     showErr($("#shorten-error"), e.message);
   } finally {
     btn.disabled = false;
+    btn.textContent = originalText;
   }
 });
 
-// Copy
+// Copy functions
+function copyToClipboard(text, button, errorEl) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = button.textContent;
+      button.textContent = "Copied!";
+      setTimeout(() => (button.textContent = originalText), 2000);
+    }).catch(() => {
+      fallbackCopy(text, button, errorEl);
+    });
+  } else {
+    fallbackCopy(text, button, errorEl);
+  }
+}
+
+function fallbackCopy(text, button, errorEl) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    document.execCommand('copy');
+    const originalText = button.textContent;
+    button.textContent = "Copied!";
+    setTimeout(() => (button.textContent = originalText), 2000);
+  } catch (err) {
+    showErr(errorEl, "Failed to copy to clipboard");
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
+// Copy URL
 $("#copy-btn").addEventListener("click", () => {
-  navigator.clipboard.writeText($("#short-url").href);
-  $("#copy-btn").textContent = "Copied!";
-  setTimeout(() => ($("#copy-btn").textContent = "Copy"), 1500);
+  const url = $("#short-url").href;
+  copyToClipboard(url, $("#copy-btn"), $("#shorten-error"));
+});
+
+// Copy Code only
+$("#copy-code-btn").addEventListener("click", () => {
+  const url = $("#short-url").href;
+  const code = url.split('/').pop();
+  copyToClipboard(code, $("#copy-code-btn"), $("#shorten-error"));
 });
 
 // Stats
 $("#stats-btn").addEventListener("click", async () => {
   const code = $("#stats-code").value.trim();
-  if (!code) return;
+  if (!code) {
+    showErr($("#stats-error"), "Please enter a code");
+    return;
+  }
+
+  const btn = $("#stats-btn");
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Loading...";
+
   try {
     const res = await fetch("/stats/" + encodeURIComponent(code));
     if (!res.ok) {
       const d = await res.json();
       throw new Error(d.detail || res.statusText);
     }
+
     const d = await res.json();
     $("#s-url").textContent = d.url;
     $("#s-clicks").textContent = d.click_count;
     $("#s-created").textContent = fmtDate(d.created_at);
     $("#s-expires").textContent = fmtDate(d.expires_at);
+
     const tbody = $("#clicks-body");
     tbody.innerHTML = "";
-    d.clicks.forEach((c) => {
+
+    if (d.clicks.length === 0) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${fmtDate(c.clicked_at)}</td><td>${c.ip || "-"}</td><td>${c.referer || "-"}</td>`;
+      tr.innerHTML = `<td colspan="3" style="text-align:center;color:#666;">No clicks yet</td>`;
       tbody.appendChild(tr);
-    });
+    } else {
+      d.clicks.forEach((c) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${fmtDate(c.clicked_at)}</td>
+          <td>${c.ip || "-"}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${c.referer || "-"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
     $("#stats").classList.add("show");
+    $("#stats").scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (e) {
     $("#stats").classList.remove("show");
     showErr($("#stats-error"), e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
 });
 
 // Enter key triggers
-$("#url").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#shorten-btn").click(); });
-$("#stats-code").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#stats-btn").click(); });
+$("#url").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") $("#shorten-btn").click();
+});
+$("#stats-code").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") $("#stats-btn").click();
+});
 </script>
 </body>
 </html>
