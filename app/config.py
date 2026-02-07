@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DEFAULT_TTL_HOURS: int = 24
     CODE_LENGTH: int = 6
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()

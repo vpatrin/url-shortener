@@ -19,7 +19,7 @@ install: ## Install dependencies
 
 setup: install ## Initial setup (install deps + create .env)
 	@echo "$(BLUE)Setting up development environment...$(RESET)"
-	@if [ ! -f .env ]; then \
+	@if [ ! -f .env ] || [ ! -s .env ]; then \
 		cp .env.local .env; \
 		echo "$(BLUE)Created .env from .env.local$(RESET)"; \
 	fi
