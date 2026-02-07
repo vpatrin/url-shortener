@@ -49,14 +49,14 @@ async def test_shorten_url_with_custom_ttl(client):
 async def test_redirect(client):
     """Test redirect functionality."""
     # First create a short URL
-    payload = {"url": "https://www.example.com"}
+    payload = {"url": "https://www.example.com/"}
     create_response = await client.post("/shorten", json=payload)
     code = create_response.json()["code"]
 
     # Then test the redirect
     response = await client.get(f"/{code}", follow_redirects=False)
     assert response.status_code == 301
-    assert response.headers["location"] == "https://www.example.com"
+    assert response.headers["location"] == "https://www.example.com/"
 
 
 @pytest.mark.integration
@@ -71,7 +71,7 @@ async def test_redirect_nonexistent(client):
 async def test_stats(client):
     """Test getting stats for a short URL."""
     # Create a short URL
-    payload = {"url": "https://www.example.com"}
+    payload = {"url": "https://www.example.com/"}
     create_response = await client.post("/shorten", json=payload)
     code = create_response.json()["code"]
 
@@ -84,7 +84,7 @@ async def test_stats(client):
 
     data = response.json()
     assert data["code"] == code
-    assert data["url"] == "https://www.example.com"
+    assert data["url"] == "https://www.example.com/"
     assert data["click_count"] >= 0
     assert "clicks" in data
     assert "created_at" in data
