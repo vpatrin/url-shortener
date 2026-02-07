@@ -1,0 +1,37 @@
+# Docker Compose configuration for local development
+# This starts only PostgreSQL and Redis with exposed ports
+# Run your FastAPI app locally with: poetry run uvicorn app.main:app --reload
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: url-shortener-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-shortener}
+    ports:
+      - "5432:5432"  # Exposed for local development
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: url-shortener-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"  # Exposed for local development
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata_dev:
