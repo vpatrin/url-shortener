@@ -3,7 +3,7 @@ name = "url-shortener"
 version = "0.1.0"
 description = "URL shortener with click analytics"
 authors = ["Victor Patrin"]
-readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
