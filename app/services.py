@@ -11,11 +11,19 @@ from app.models import Click, Link
 
 # Redis
 
-_pool = redis.ConnectionPool.from_url(settings.REDIS_URL)
+_pool = None
+
+
+def _get_pool() -> redis.ConnectionPool:
+    """Get or create Redis connection pool lazily."""
+    global _pool
+    if _pool is None:
+        _pool = redis.ConnectionPool.from_url(settings.REDIS_URL)
+    return _pool
 
 
 def _redis() -> redis.Redis:
-    return redis.Redis(connection_pool=_pool)
+    return redis.Redis(connection_pool=_get_pool())
 
 
 async def _cache_link(code: str, url: str, ttl_seconds: int) -> None:

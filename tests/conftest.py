@@ -42,24 +42,51 @@ def redis_container():
         yield redis_url
 
 
-@pytest.fixture(scope="session")
-def test_engine(postgres_container):
-    """Create a test database engine using the testcontainer."""
-    engine = create_async_engine(postgres_container, echo=False)
-    return engine
-
-
 @pytest.fixture(scope="function", autouse=True)
-def setup_test_environment(postgres_container, redis_container, monkeypatch):
+async def setup_test_environment(postgres_container, redis_container, monkeypatch):
     """
     Override settings for each test to use testcontainers.
     autouse=True means this runs automatically for every test.
     """
+    # Import here to ensure module is loaded
+    import app.services
+
     monkeypatch.setattr("app.config.settings.DATABASE_URL", postgres_container)
     monkeypatch.setattr("app.config.settings.REDIS_URL", redis_container)
     # Override environment variables as well
     monkeypatch.setenv("DATABASE_URL", postgres_container)
     monkeypatch.setenv("REDIS_URL", redis_container)
+
+    # Reset Redis pool to None so it gets recreated with new settings
+    app.services._pool = None
+
+    yield
+
+    # Cleanup: flush Redis and close pool after test
+    if app.services._pool is not None:
+        # Flush Redis to clean rate limiter state between tests
+        redis_client = app.services._redis()
+        await redis_client.flushdb()
+        await redis_client.aclose()
+        # Close the pool
+        await app.services._pool.disconnect()
+        app.services._pool = None
+
+    # Reset rate limiter storage between tests
+    from app.main import app as fastapi_app
+
+    if hasattr(fastapi_app.state, "limiter"):
+        fastapi_app.state.limiter.reset()
+
+
+@pytest.fixture(scope="function")
+def test_engine(postgres_container):
+    """
+    Create a test database engine for each test.
+    Using function scope to avoid event loop issues with async fixtures.
+    """
+    engine = create_async_engine(postgres_container, echo=False, poolclass=None)
+    return engine
 
 
 @pytest.fixture(scope="function")
@@ -75,6 +102,9 @@ async def test_db(test_engine):
 
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+    # Dispose engine after each test
+    await test_engine.dispose()
 
 
 @pytest.fixture(scope="function")
