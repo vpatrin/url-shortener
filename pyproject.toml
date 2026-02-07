@@ -14,6 +14,7 @@ asyncpg = "^0.30"
 redis = "^5.2"
 pydantic-settings = "^2.7"
 slowapi = "^0.1"
+greenlet = "^3.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
@@ -21,6 +22,43 @@ pytest-asyncio = "^0.25"
 httpx = "^0.28"
 black = "^25.0"
 ruff = "^0.9"
+pytest-cov = "^6.0"
+testcontainers = {version = "^4.0", extras = ["postgres", "redis"]}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-v --strict-markers --tb=short"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Slow running tests",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = []
 
 [build-system]
 requires = ["poetry-core"]
