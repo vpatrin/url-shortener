@@ -1,3 +1,5 @@
+import os
+
 from pydantic_settings import BaseSettings
 
 
@@ -8,7 +10,10 @@ class Settings(BaseSettings):
     DEFAULT_TTL_HOURS: int = 24
     CODE_LENGTH: int = 6
 
-    model_config = {"env_file": ".env", "extra": "ignore"}
+    model_config = {
+        "env_file": os.getenv("ENV_FILE", ".env"),
+        "extra": "ignore",
+    }
 
 
 settings = Settings()
