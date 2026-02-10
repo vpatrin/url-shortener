@@ -3,32 +3,16 @@ services:
     build: .
     container_name: url-shortener-api
     restart: unless-stopped
+    environment:
+      # Constructed from individual DB_* and REDIS_* values in .env
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      REDIS_URL: redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}
     env_file:
       - path: .env
         required: false
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - web
-      - internal
-
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-shortener}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
     networks:
       - internal
 
@@ -43,10 +27,7 @@ services:
     networks:
       - internal
 
-volumes:
-  pgdata:
-
 networks:
-  web:
-    external: true
   internal:
+    # Docker Compose expects the network to already exist - won't create or delete it after docker compose up/down
+    external: true
