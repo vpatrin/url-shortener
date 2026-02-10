@@ -1,4 +1,6 @@
 from pydantic import Field, field_validator
+import os
+
 from pydantic_settings import BaseSettings
 
 
@@ -28,22 +30,6 @@ class Settings(BaseSettings):
         "env_file": os.getenv("ENV_FILE", ".env"),
         "extra": "ignore",
     }
-
-    @field_validator("DATABASE_URL", mode="after")
-    @classmethod
-    def construct_database_url(cls, v: str, info) -> str:
-        if v:
-            return v
-        data = info.data
-        return f"postgresql+asyncpg://{data['DB_USER']}:{data['DB_PASSWORD']}@{data['DB_HOST']}:{data['DB_PORT']}/{data['DB_NAME']}"
-
-    @field_validator("REDIS_URL", mode="after")
-    @classmethod
-    def construct_redis_url(cls, v: str, info) -> str:
-        if v:
-            return v
-        data = info.data
-        return f"redis://{data['REDIS_HOST']}:{data['REDIS_PORT']}/{data['REDIS_DB']}"
 
     @field_validator("DATABASE_URL", mode="after")
     @classmethod
