@@ -1,22 +1,48 @@
 # Docker Compose configuration for local development
-# This starts only PostgreSQL and Redis with exposed ports
-# Run your FastAPI app locally with: poetry run uvicorn app.main:app --reload
+# Run: docker compose -f docker-compose.dev.yml up
+# Hot reload enabled via volume mount
 
 services:
+  api:
+    build: .
+    container_name: url-shortener-api-dev
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      # Dev-friendly defaults (no .env needed)
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: shortener
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      BASE_URL: http://localhost:8000
+      DEFAULT_TTL_HOURS: 24
+      CODE_LENGTH: 6
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app  # Hot reload - mount source code
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   db:
     image: postgres:16-alpine
     container_name: url-shortener-db-dev
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-shortener}
-    ports:
-      - "5432:5432"  # Exposed for local development
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: shortener
     volumes:
       - pgdata_dev:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -25,8 +51,6 @@ services:
     image: redis:7-alpine
     container_name: url-shortener-redis-dev
     restart: unless-stopped
-    ports:
-      - "6379:6379"  # Exposed for local development
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
