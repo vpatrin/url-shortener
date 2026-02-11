@@ -3,13 +3,9 @@ services:
     build: .
     container_name: url-shortener-api
     restart: unless-stopped
-    environment:
-      # Constructed from individual DB_* and REDIS_* values in .env
-      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
-      REDIS_URL: redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}
-    env_file:
-      - path: .env
-        required: false
+    ports:
+      - "127.0.0.1:8000:8000"  # Localhost only - for local development
+    env_file: .env
     depends_on:
       redis:
         condition: service_healthy
@@ -18,7 +14,10 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: url-shortener-redis
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"  # Localhost only - for native dev
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -29,5 +28,4 @@ services:
 
 networks:
   internal:
-    # Docker Compose expects the network to already exist - won't create or delete it after docker compose up/down
     external: true

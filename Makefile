@@ -1,4 +1,4 @@
-.PHONY: help install dev up down clean test test-watch lint format check logs db-shell redis-shell build deploy deploy-status logs-prod
+.PHONY: help install deps dev up down clean test test-watch lint format check logs db-shell redis-shell build deploy deploy-status logs-prod
 
 # Colors for pretty output
 BLUE := \033[36m
@@ -23,40 +23,25 @@ install: ## [DEV] Install dependencies
 	@echo "$(BLUE)Installing dependencies...$(RESET)"
 	poetry install
 
-setup: install ## [DEV] Initial setup (install deps + create .env)
-	@echo "$(BLUE)Setting up development environment...$(RESET)"
-	@if [ ! -f .env ] || [ ! -s .env ]; then \
-		cp .env.local .env; \
-		echo "$(BLUE)Created .env from .env.local$(RESET)"; \
-	fi
+##@ [DEV] Local Development
 
-##@ [DEV] Running
+deps: ## [DEV] Start infra (shared-postgres + redis)
+	cd ../shared-postgres && docker compose up -d
+	docker compose up redis -d
 
-dev: setup up ## [DEV] Full dev environment (setup + start databases)
-	@echo ""
-	@echo "$(GREEN)✅ Development environment ready!$(RESET)"
-	@echo ""
-	@echo "Run the app with:"
-	@echo "  make run"
+dev: deps ## [DEV] Start native dev server (uvicorn --reload)
+	poetry run uvicorn app.main:app --reload --port 8000
 
-up: ## [DEV] Start databases (PostgreSQL + Redis)
-	@echo "$(BLUE)Starting databases...$(RESET)"
-	docker compose -f docker-compose.dev.yml up -d
-	@echo "$(BLUE)Waiting for databases...$(RESET)"
-	@sleep 3
+##@ [DEV] Docker
 
-down: ## [DEV] Stop databases
-	@echo "$(BLUE)Stopping databases...$(RESET)"
-	docker compose -f docker-compose.dev.yml down
+up: ## [DEV] Start all services in Docker
+	docker compose up -d --build
 
-run: ## [DEV] Run the application with hot reload
-	@echo "$(BLUE)Starting FastAPI with hot reload...$(RESET)"
-	@echo "Access at: http://localhost:8000"
-	@echo "API docs:  http://localhost:8000/docs"
-	ENV_FILE=.env.local poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+down: ## [DEV] Stop services
+	docker compose down
 
-logs: ## [DEV] Show database logs
-	docker compose -f docker-compose.dev.yml logs -f
+logs: ## [DEV] Show container logs
+	docker compose logs -f
 
 ##@ [DEV] Testing
 
@@ -87,11 +72,11 @@ check: lint ## [DEV] Run all checks (lint)
 
 ##@ [DEV] Database
 
-db-shell: ## [DEV] Open PostgreSQL shell
-	docker exec -it url-shortener-db-dev psql -U postgres -d shortener
+db-shell: ## [DEV] Open PostgreSQL shell (shared-postgres)
+	docker exec -it shared-postgres psql -U shortener -d shortener
 
 redis-shell: ## [DEV] Open Redis CLI
-	docker exec -it url-shortener-redis-dev redis-cli
+	docker exec -it url-shortener-redis redis-cli
 
 ##@ [DEV] Utilities
 
@@ -99,9 +84,8 @@ build: ## [DEV] Build production Docker image locally
 	@echo "$(BLUE)Building production image...$(RESET)"
 	docker compose build
 
-clean: down ## [DEV] Clean up (stop containers + remove volumes)
+clean: ## [DEV] Clean up (pytest cache, coverage reports)
 	@echo "$(BLUE)Cleaning up...$(RESET)"
-	docker compose -f docker-compose.dev.yml down -v
 	rm -rf .pytest_cache
 	rm -rf htmlcov
 	rm -rf .coverage
